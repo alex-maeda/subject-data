@@ -1,0 +1,3 @@
+name: subject-data
+runtime: go
+description: AWS infrastructure for subject-data (ECS Fargate + API Gateway)

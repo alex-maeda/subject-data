@@ -1,0 +1,28 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - gocritic
+    - gosec
+    - errorlint
+    - bodyclose
+    - exhaustive
+    - noctx
+    - revive
+  settings:
+    exhaustive:
+      default-signifies-exhaustive: true
+
+formatters:
+  enable:
+    - gci
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/sovraai/subject-data)

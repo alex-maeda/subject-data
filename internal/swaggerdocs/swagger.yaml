@@ -1,0 +1,382 @@
+basePath: /
+definitions:
+  api.ErrorDetail:
+    properties:
+      code:
+        type: string
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  api.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/api.ErrorDetail'
+    type: object
+  api.StatusResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      status:
+        type: string
+    type: object
+  api.SubjectCreateRequest:
+    properties:
+      subject_name:
+        type: string
+    type: object
+  api.SubjectSummary:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  api.SubjectUpdateRequest:
+    properties:
+      subject_name:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Server-to-server REST API for Subjects, Records, and Ratings.
+  title: Subject Data API
+  version: 0.1.0
+paths:
+  /healthz:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Liveness probe
+      tags:
+      - health
+  /readyz:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Readiness probe
+      tags:
+      - health
+  /v1/records:
+    get:
+      parameters:
+      - description: Filter by subject ID
+        in: query
+        name: subject_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: object
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all records
+      tags:
+      - records
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Record data
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new record
+      tags:
+      - records
+  /v1/records/{recordID}:
+    delete:
+      parameters:
+      - description: Record ID
+        in: path
+        name: recordID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.StatusResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a record
+      tags:
+      - records
+    get:
+      parameters:
+      - description: Record ID
+        in: path
+        name: recordID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get record by ID
+      tags:
+      - records
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Record ID
+        in: path
+        name: recordID
+        required: true
+        type: string
+      - description: Updated record data
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a record
+      tags:
+      - records
+  /v1/subjects:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.SubjectSummary'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all subjects
+      tags:
+      - subjects
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Create subject request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.SubjectCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new subject
+      tags:
+      - subjects
+  /v1/subjects/{subjectID}:
+    delete:
+      parameters:
+      - description: Subject ID
+        in: path
+        name: subjectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.StatusResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a subject
+      tags:
+      - subjects
+    get:
+      parameters:
+      - description: Subject ID
+        in: path
+        name: subjectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get subject by ID
+      tags:
+      - subjects
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Subject ID
+        in: path
+        name: subjectID
+        required: true
+        type: string
+      - description: Update subject request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.SubjectUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a subject
+      tags:
+      - subjects
+  /v1/subjects/{subjectID}/records:
+    get:
+      parameters:
+      - description: Subject ID
+        in: path
+        name: subjectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: object
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List records for a subject
+      tags:
+      - records
+securityDefinitions:
+  BearerAuth:
+    description: Enter the full value including prefix, e.g. "Bearer my-secret-token"
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

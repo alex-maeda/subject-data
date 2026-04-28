@@ -1,0 +1,29 @@
+# Binary output
+bin/
+/run_service
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+
+# Test coverage
+coverage.out
+
+# Claude Code
+.claude/
+
+# direnv
+.envrc
+
+# Environment
+.env
+.env.*
+!.env.example
+!.env.development
+infra/pulumi/pulumi
+infra/pulumi/.envrc

@@ -1,0 +1,9 @@
+config:
+  subject-data:appEnv: beta
+  subject-data:vpcCidr: "10.2.0.0/24"
+  # Map of caller name → AWS account ID. Each caller gets its own
+  # cross-account IAM invoke role for the API Gateway.
+  subject-data:callerAccounts:
+    frontend-server: "835107812595"
+  aws:region: us-east-2
+encryptionsalt: v1:b+GCZtUB2Yc=:v1:Q7t8HK03obA6cp/p:ZVmIhgJqGPGS98a0GEpHO6pJb+wSdg==
