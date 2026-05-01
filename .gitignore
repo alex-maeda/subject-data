@@ -27,3 +27,8 @@ coverage.out
 !.env.development
 infra/pulumi/pulumi
 infra/pulumi/.envrc
+
+
+*.zip
+*.log
+*.exe

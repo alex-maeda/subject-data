@@ -26,6 +26,18 @@ func main() {
 			return err
 		}
 
+		// 2. S3 bucket (and KMS key)
+		s3Bucket, err := createS3Bucket(ctx, appEnv)
+		if err != nil {
+			return err
+		}
+
+		// 3. IAM for S3 (role, user, policies, access key)
+		s3Iam, err := createS3Iam(ctx, appEnv, s3Bucket.Bucket.Bucket, s3Bucket.KmsKey.Arn)
+		if err != nil {
+			return err
+		}
+
 		ecrRes, err := lookupECR(ctx)
 		if err != nil {
 			return err
@@ -59,6 +71,14 @@ func main() {
 		ctx.Export("clusterName", ecsRes.Cluster.Name)
 		ctx.Export("vpcId", net.VPC.ID())
 		ctx.Export("dbEndpoint", rdsRes.Instance.Endpoint)
+
+		// New outputs for ingestion bucket and IAM
+		ctx.Export("ingestBucketName", s3Bucket.Bucket.Bucket)
+		ctx.Export("ingestKmsKeyArn", s3Bucket.KmsKey.Arn)
+		ctx.Export("ingestRoleArn", s3Iam.Role.Arn)
+		ctx.Export("ingestUserName", s3Iam.User.Name)
+		ctx.Export("ingestUserAccessKeyId", s3Iam.AccessKey.ID())
+		ctx.Export("ingestUserSecretArn", s3Iam.Secret.Arn)
 
 		return nil
 	})
