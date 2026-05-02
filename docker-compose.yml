@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  pulumi:
+    build:
+      context: .
+      dockerfile: Dockerfile.pulumi
+      args:
+        PULUMI_VERSION: ${PULUMI_VERSION:-3.233.0}
+    image: subject-data-pulumi:latest
+    container_name: subject-data-pulumi
+    working_dir: /workspace/infra/pulumi
+    volumes:
+      - ./:/workspace
+      - pulumi-state:/root/.pulumi
+      - ~/.aws:/root/.aws:ro
+      - ~/.config/gcloud:/root/.config/gcloud:ro
+    env_file:
+      - .env.pulumi
+    networks:
+      - subject-data-net
+    stdin_open: true
+    tty: true
+    entrypoint: ["/bin/sh"]
+
+  pulumi-local:
+    build:
+      context: .
+      dockerfile: Dockerfile.pulumi
+      args:
+        PULUMI_VERSION: ${PULUMI_VERSION:-3.233.0}
+    image: subject-data-pulumi-local:latest
+    container_name: subject-data-pulumi-local
+    working_dir: /workspace/infra/pulumi
+    volumes:
+      - ./:/workspace
+      - ./infra/pulumi/.pulumi:/root/.pulumi
+    environment:
+      - PULUMI_CONFIG_PASSPHRASE=${PULUMI_CONFIG_PASSPHRASE:-localdev}
+      - PULUMI_BACKEND_URL=file:///root/.pulumi
+      - AWS_REGION=${AWS_REGION:-us-east-2}
+    networks:
+      - subject-data-net
+    stdin_open: true
+    tty: true
+
+volumes:
+  pulumi-state:
+
+networks:
+  subject-data-net:
+    driver: bridge

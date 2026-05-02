@@ -1,32 +1,21 @@
 package main
 
 import (
-	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/kms"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/s3"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-// S3BucketResources holds the S3 bucket and its KMS key.
+// S3BucketResources holds the S3 bucket resources.
 type S3BucketResources struct {
 	Bucket *s3.BucketV2
-	KmsKey *kms.Key
 }
 
 // createS3Bucket creates an S3 bucket for ingestion with:
 // - versioning enabled
-// - KMS encryption (customer-managed key)
+// - SSE-S3 default encryption (AES-256, free, no key management)
 // - lifecycle rule (expire noncurrent versions after 90 days)
 // - public access block (fully private)
 func createS3Bucket(ctx *pulumi.Context, appEnv string) (*S3BucketResources, error) {
-	// KMS key for bucket encryption
-	kmsKey, err := kms.NewKey(ctx, "ingestion-bucket-key", &kms.KeyArgs{
-		Description: pulumi.Sprintf("KMS key for subject-data-ingestion-%s bucket", appEnv),
-		Tags:        tags("kms", appEnv),
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	// S3 bucket (name includes environment suffix)
 	bucket, err := s3.NewBucketV2(ctx, "bucket", &s3.BucketV2Args{
 		Bucket: pulumi.Sprintf("subject-data-ingestion-%s", appEnv),
@@ -47,14 +36,13 @@ func createS3Bucket(ctx *pulumi.Context, appEnv string) (*S3BucketResources, err
 		return nil, err
 	}
 
-	// KMS encryption configuration
+	// SSE-S3 encryption (AES-256, Amazon-managed keys — free, no key policy needed)
 	_, err = s3.NewBucketServerSideEncryptionConfigurationV2(ctx, "bucket-encryption", &s3.BucketServerSideEncryptionConfigurationV2Args{
 		Bucket: bucket.Bucket,
 		Rules: s3.BucketServerSideEncryptionConfigurationV2RuleArray{
 			&s3.BucketServerSideEncryptionConfigurationV2RuleArgs{
 				ApplyServerSideEncryptionByDefault: &s3.BucketServerSideEncryptionConfigurationV2RuleApplyServerSideEncryptionByDefaultArgs{
-					SseAlgorithm:   pulumi.String("aws:kms"),
-					KmsMasterKeyId: kmsKey.Arn,
+					SseAlgorithm: pulumi.String("AES256"),
 				},
 			},
 		},
@@ -92,12 +80,7 @@ func createS3Bucket(ctx *pulumi.Context, appEnv string) (*S3BucketResources, err
 		return nil, err
 	}
 
-	// Export values for other stacks (e.g., IAM)
-	ctx.Export("ingestBucketName", bucket.Bucket)
-	ctx.Export("ingestKmsKeyArn", kmsKey.Arn)
-
 	return &S3BucketResources{
 		Bucket: bucket,
-		KmsKey: kmsKey,
 	}, nil
 }

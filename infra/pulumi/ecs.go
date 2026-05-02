@@ -28,7 +28,7 @@ type ECSResources struct {
 //
 // Fargate tasks share a network namespace, so subject-data can reach
 // backend services via the Tailscale interface without any proxy config.
-func createECS(ctx *pulumi.Context, appEnv string, net *NetworkResources, repoURL string, rdsRes *RDSResources) (*ECSResources, error) {
+func createECS(ctx *pulumi.Context, appEnv string, net *NetworkResources, repoURL string, rdsRes *RDSResources, s3Res *S3BucketResources) (*ECSResources, error) {
 	// --- CloudWatch log group ---
 
 	_, err := cloudwatch.NewLogGroup(ctx, "log-group", &cloudwatch.LogGroupArgs{
@@ -142,6 +142,47 @@ func createECS(ctx *pulumi.Context, appEnv string, net *NetworkResources, repoUR
 			}]
 		}`),
 		Tags: tags("ecs-task-role", appEnv),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Grant the task role S3 read/write for the ingestion bucket.
+	// Read: pull parquet files and manifests during batch import jobs.
+	// Write: publish ingestion.json completion marker back to the same prefix.
+	_, err = iam.NewRolePolicy(ctx, "task-s3-access", &iam.RolePolicyArgs{
+		Role: taskRole.Name,
+		Policy: s3Res.Bucket.Bucket.ApplyT(
+			func(bucket string) string {
+				bucketArn := fmt.Sprintf("arn:aws:s3:::%s", bucket)
+				policy, _ := json.Marshal(map[string]any{
+					"Version": "2012-10-17",
+					"Statement": []map[string]any{
+						{
+							"Sid":    "S3ReadIngestionBucket",
+							"Effect": "Allow",
+							"Action": []string{
+								"s3:GetObject",
+								"s3:ListBucket",
+							},
+							"Resource": []string{
+								bucketArn,
+								bucketArn + "/*",
+							},
+						},
+						{
+							"Sid":    "S3WriteIngestionJson",
+							"Effect": "Allow",
+							"Action": []string{
+								"s3:PutObject",
+							},
+							"Resource": bucketArn + "/published/*/ingestion.json",
+						},
+					},
+				})
+				return string(policy)
+			},
+		).(pulumi.StringOutput),
 	})
 	if err != nil {
 		return nil, err

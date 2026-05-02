@@ -1,0 +1,32 @@
+# Dockerfile for Pulumi CLI - used for running pulumi commands in Docker
+# Supports both AWS-backed and local file-backed state
+
+ARG PULUMI_VERSION=3.233.0
+
+FROM pulumi/pulumi:${PULUMI_VERSION}
+
+# Install Go (needed for pulumi plugin install and building)
+ENV GO_VERSION=1.26.1
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/go
+ENV PATH=$GOPATH/bin:/usr/local/go/bin:$PATH
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Go
+RUN curl -L https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz | tar -C /usr/local -xzf -
+
+# Create working directory
+WORKDIR /workspace
+
+# Install AWS and other Pulumi plugins (speeds up first run)
+RUN pulumi plugin install resource aws v6.83.2
+
+# Set shell
+SHELL ["/bin/bash", "-c"]
+
+CMD ["/bin/bash"]

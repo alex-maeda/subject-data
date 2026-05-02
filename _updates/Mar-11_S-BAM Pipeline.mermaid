@@ -1,0 +1,532 @@
+%% S-BAM Pipeline — Optimized Mermaid Diagram
+%% Converted from draw.io XML (S-BAM_Pipeline.xml)
+%% Shapes: cylinders = data artifacts, rectangles = processes, rounded = actors
+%% Dashed arrows = uncertain / open-question connections
+
+flowchart TD
+
+%% ─────────────────────────────────────────
+%%  ACTORS
+%% ─────────────────────────────────────────
+PR([Psych Raters])
+SS([SOVRA Science])
+
+%% ─────────────────────────────────────────
+%%  STATIC KNOWLEDGE BASE
+%% ─────────────────────────────────────────
+subgraph StaticKB["Static Knowledge Base"]
+    CFD[(CE Feature Definitions\nName · Category · Definition · L/M/H)]
+    RTax[(Risk Taxonomy\nName · Category · Definition · L/M/H)]
+    STaxon[(Strength Taxonomy\nName · Category · Definition · L/M/H)]
+    IPH[(Expert Interaction Hypotheses)]
+    LIFED[(Life Event Definitions)]
+    SIGW[(Significance Weights)]
+    VALSPEC[(Validity Spectrum)]
+end
+
+%% ─────────────────────────────────────────
+%%  SUBJECT INPUT DATA
+%% ─────────────────────────────────────────
+subgraph SubjectData["Subject Input Data"]
+    STD[(Subject Trace Data)]
+    SVIP[(S-VIP)]
+    SPACE[(S-PACE)]
+end
+
+%% ─────────────────────────────────────────
+%%  PSYCH RATER OUTPUTS
+%% ─────────────────────────────────────────
+subgraph RaterOut["Psych Rater Outputs"]
+    PSCE[(Psych Subject CE\nScores · Confidence · Reasoning · Citations)]
+    PSR[(Psych Subject Risks\nScores · Confidence · Reasoning · Citations)]
+    PSSTR[(Psych Subject Strengths)]
+    PSIP[(Psych Subject Inflection Points)]
+    PSCS[(Psych Subject Conclusion / Synthesis)]
+    PSAR[(Psych Subject Areas of Risk)]
+    PSDEMOG[(Demographics & Biopsychosocial History)]
+end
+
+PR -->|produces| PSCE
+PR -->|produces| PSR
+PR -->|produces| PSSTR
+PR -->|produces| PSIP
+PR -->|produces| PSCS
+PR -->|produces| PSAR
+PR -->|produces| PSDEMOG
+
+%% SOVRA Science + Interaction features
+IPH -->|consumes| SS
+SS -->|produces| IFD[(Interaction Feature Definitions)]
+
+%% ─────────────────────────────────────────
+%%  1022 · PREPROCESSING & CE FEATURE EXTRACTION
+%% ─────────────────────────────────────────
+subgraph PRE["1022: Preprocessing & CE Feature Extraction"]
+    direction TB
+
+    subgraph CETraining["CE Training Path"]
+        CELLM["CE LLM Training"]
+        CELORA[(CE LoRA Adapter)]
+        CELLM -->|produces| CELORA
+    end
+
+    subgraph NLPGroup["Domain-Specific NLP"]
+        NLP1["1025: NLP 1\nPersonality · Stress · Psychopathy"]
+        NLP2["1026: NLP 2\nValues · Motivations · Character"]
+        NLP3["1027: NLP 3\nAptitude"]
+    end
+
+    subgraph AlgCal["Algorithmic Calibration"]
+        AC["1032: Algorithm Confidence"]
+        LLMCAL["1034: LLM-based Calibration"]
+    end
+
+    LLMCE_EX["LLM CE Feature Extraction"]
+    CELORA -->|consumes| LLMCE_EX
+end
+
+%% Inputs into 1022
+CFD    -->|consumes| CELLM
+PSCE   -->|consumes| CELLM
+SIGW   -->|consumes| AC
+VALSPEC-->|consumes| AC
+SIGW   -->|consumes| LLMCAL
+VALSPEC-->|consumes| LLMCAL
+SIGW   -->|consumes| NLP1
+SIGW   -->|consumes| NLP2
+SIGW   -->|consumes| NLP3
+STD    -->|consumes| LLMCE_EX
+STD    -->|consumes| NLP1
+STD    -->|consumes| NLP2
+STD    -->|consumes| NLP3
+
+%% 1022 output
+LLMCE_EX -->|produces| LLMCE
+NLP1     -->|produces| LLMCE
+NLP2     -->|produces| LLMCE
+AC       -->|produces| LLMCE
+LLMCAL   -->|produces| LLMCE
+LLMCE[(LLM Subject CE\nScores · Confidence · Reasoning · Citations)]
+
+%% ─────────────────────────────────────────
+%%  ML-200 · PATH 1 — FINE-TUNED LLM
+%% ─────────────────────────────────────────
+subgraph ML200["ML-200: Path 1 – Fine-Tuned LLM"]
+    direction TB
+
+    subgraph RiskTraining["Risk LLM Training Path"]
+        RLLM["Risk LLM Training"]
+        RLORA[(Risk LoRA Adapter)]
+        RLLM -->|produces| RLORA
+    end
+
+    ML204["ML-204: Prompt Structure Build"]
+    PROFENC[(Profile Encoder Prompt)]
+    ML206["ML-206: Fine-Tuned LLM Classifier"]
+
+    ML204 -->|produces ?| PROFENC
+    PROFENC -->|consumes| ML206
+    RLORA  -->|consumes| ML206
+    ML204  -->|consumes| ML206
+end
+
+RTax  -.->|consumes ?| RLLM
+PSR   -.->|consumes ?| RLLM
+STaxon-.->|consumes ?| RLLM
+PSSTR -.->|consumes ?| RLLM
+STD   -->|consumes| ML204
+LLMCE -->|consumes| ML204
+
+ML206 -->|produces| LLMRISKS[(LLM Subject Risks\nProbability · Confidence · Consensus · Reasoning · Citations)]
+
+%% ─────────────────────────────────────────
+%%  ML-300 · PATH 2 — ML + EXPLAINABILITY
+%% ─────────────────────────────────────────
+subgraph ML300["ML-300: Path 2 – ML + Explainability"]
+    direction TB
+
+    subgraph ML110["ML-110: Feature Combination Engineering"]
+        IW["Input Weighting"]
+        CWI["ML-302: Confidence Weighted Input"]
+        IW -->|produces| CWI
+    end
+
+    subgraph ML304["ML-304: Two-Stage Hierarchical Logic"]
+        direction LR
+        S1["Stage 1: 10 Category Classifiers"]
+        MCR[(Main Risk Category Subject Risks\nProbability · Score · Confidence)]
+        S2["Stage 2: 42 Sub-Risk Classifiers"]
+        SRR[(Sub-Risk Subject Risks\nProbability · Score · Confidence)]
+        S1 -->|produces| MCR
+        MCR -->|consumes| S2
+        S2 -->|produces| SRR
+    end
+
+    SHAP["ML-306: SHAP Explainability Engine"]
+
+    CWI -->|consumes| S1
+    CWI -->|consumes| S2
+    MCR -->|consumes| SHAP
+    SRR -->|consumes| SHAP
+end
+
+NORMCONF[(Normalized Confidence)]
+IFD     -->|consumes| IW
+NORMCONF-->|consumes| IW
+LLMCE   -->|consumes| IW
+
+SHAP -->|produces| MLRISKS[(ML Subject Risks\nProbability · Score · Confidence · Reasoning · Citations)]
+
+%% ─────────────────────────────────────────
+%%  ML-400 · CONFIDENCE CALIBRATION & CONVERGENCE
+%% ─────────────────────────────────────────
+subgraph ML400["ML-400: Confidence Calibration & Convergence Module"]
+    direction TB
+    WGTS[(Risk Classification Weights\nw_LLM · w_ML)]
+    DT[(Disagreement Threshold)]
+    MERGE["Calibrate & Merge\nML-402: Weighted Fusion\nML-404: Disagreement Detector\nML-406: Calibration Layer"]
+    HITL["HITL for Low-Consensus Risks"]
+    WGTS -->|consumes| MERGE
+    DT   -->|consumes| MERGE
+end
+
+LLMRISKS -->|consumes| MERGE
+MLRISKS  -->|consumes| MERGE
+MERGE    <-->|notifies / responds| HITL
+HITL     <-->|notifies / responds| PR
+MERGE    -->|produces| SCRPO[(Subject Classified Risk Profile Output\nProbability · Confidence · Consensus · Reasoning · Citations)]
+
+%% ─────────────────────────────────────────
+%%  R-104 / R-106 · MERGE & CATEGORIZE
+%% ─────────────────────────────────────────
+R104["R-104: Merge and Deduplicate"]
+PDR[(Profile-Derived Risks)]
+SCRPO  -->|consumes| R104
+LLMCE  -->|consumes| R104
+PDR    -.->|consumes ?| R104
+RTax   -.->|consumes ?| R104
+R104   -->|produces| CRL[(R-106: Categorized Risk List)]
+
+%% ─────────────────────────────────────────
+%%  R-300 · DUAL-AXIS SCORING ENGINE
+%% ─────────────────────────────────────────
+subgraph R300["R-300: Dual-Axis Scoring Engine"]
+    direction TB
+
+    subgraph POL["Pattern-of-Life"]
+        POLAR["R-202: Pattern-of-Life Analysis"]
+        POLO[(Pattern-of-Life Output)]
+        POLAR -->|produces| POLO
+    end
+
+    MAE["R-204: Mitigator / Amplifier Analysis Engine"]
+    ERD["R-206: Emergent Risk Detector"]
+    ER[(Emergent Risks & Strengths)]
+
+    SS302["R-302: Salience Scoring"]
+    LR303["R-303: Lifestyle Relevance"]
+    CR304["R-304: Confidence Rating"]
+
+    RSS[(Risk Salience Scores)]
+    RLR[(Risk Lifestyle Relevance)]
+    CRAT[(Confidence Rating)]
+
+    CRG["R-306: Composite Rank Generator"]
+
+    POLO -->|consumes| MAE
+    MAE  -->|produces| ER
+    ER   -->|consumes| ERD
+    ERD  -.->|if new risks, repeat| MAE
+
+    ER   -->|consumes| SS302
+    ER   -->|consumes| LR303
+    ER   -->|consumes| CR304
+
+    SS302 -->|produces| RSS
+    LR303 -->|produces| RLR
+    CR304 -->|produces| CRAT
+
+    RSS  -->|consumes| CRG
+    RLR  -->|consumes| CRG
+    CRAT -->|consumes| CRG
+end
+
+Habits[(Habits)]
+LS[(Lifestyle Signals)]
+SRC[(Self-Reported Context)]
+ESF[(Environmental & Situational Factors)]
+STRN[(Strengths)]
+
+SPACE  -->|consumes| POLAR
+Habits -.->|consumes| POLAR
+LS     -.->|consumes| POLAR
+SRC    -.->|consumes| POLAR
+ESF    -.->|consumes| POLAR
+LLMCE  -.->|consumes ?| POLAR
+
+CRL  -->|consumes| MAE
+CRL  -->|consumes| CRG
+POLO -.->|consumes ?| SS302
+POLO -.->|consumes ?| CR304
+STRN -.->|consumes ?| CRG
+
+CRG -->|produces| SSRO_S[(Subject Scored Risk Output – Strengths)]
+CRG -->|produces| SSRO_R[(Subject Scored Risk Output – Risks)]
+
+%% ─────────────────────────────────────────
+%%  R-400 · MEANING EXTRACTION MODULE
+%% ─────────────────────────────────────────
+MEM["R-400: Meaning Extraction Module"]
+SSRO_S -->|consumes| MEM
+SSRO_R -->|consumes| MEM
+MEM -->|produces| SMEAN[(Strength Meaning\nWhat · Why · How · When · Tension)]
+MEM -->|produces| RMEAN[(Risk Meaning\nWhat · Why · How · When · Tension)]
+
+%% ─────────────────────────────────────────
+%%  C-200 · DEVELOPMENTAL CONTEXT LAYER
+%% ─────────────────────────────────────────
+subgraph C200["C-200: Developmental Context Layer"]
+    direction LR
+    DSD[(Developmental Stage Definitions\nS1:0-5 · S2:6-12 · S3:13-18\nS4:19-29 · S5:30-50 · S6:50-65 · S7:65+)]
+    SDSD[(Subject Developmental Stage Data\nS1–S7)]
+    CRPD[(Core Rating Pillar Definitions)]
+    SCRP[(Subject Core Rating Pillar)]
+    DSD  -.->|schema ref| SDSD
+    CRPD -.->|schema ref| SCRP
+end
+
+%% ─────────────────────────────────────────
+%%  C-300 · CONTEXTUALIZED RATING ADJUSTMENT
+%% ─────────────────────────────────────────
+subgraph C300["C-300: Contextualized Rating Adjustment"]
+    direction TB
+    HPA["C-302: Holistic Profile Assessment"]
+    RCLM["C-304: Rater-Calibrated LLM"]
+
+    CCE[(Contextualized CE Score)]
+    COML[(Contextualized Output of ML-302)]
+    CED[(CE Delta)]
+    OMLD[(Output of ML-302 Delta)]
+
+    HPA -->|produces| CCE
+    HPA -->|produces| COML
+    HPA -->|produces| CED
+    HPA -->|produces| OMLD
+    HPA --> RCLM
+end
+
+LLMCE  -.->|consumes ?| HPA
+SPACE  -.->|consumes ?| HPA
+SVIP   -.->|consumes ?| HPA
+RMEAN  -->|consumes| HPA
+SMEAN  -->|consumes| HPA
+SSRO_R -->|consumes| HPA
+SSRO_S -->|consumes| HPA
+POLO   -.->|consumes ?| HPA
+SDSD   -.->|consumes ?| HPA
+SCRP   -.->|consumes ?| HPA
+
+RDELTA["Residual Analysis of Deltas from C-306"]
+CCFD["Cross-Feature Correlation Decoupling"]
+SHADOW["Detect Shadow Signals in User Input"]
+
+CED  -->|consumes| RDELTA
+OMLD -->|consumes| RDELTA
+
+%% ─────────────────────────────────────────
+%%  C-400 · INFLECTION POINT IDENTIFICATION
+%% ─────────────────────────────────────────
+subgraph C400["C-400: Inflection Point Identification"]
+    direction TB
+
+    subgraph C402["C-402: Objective Inflection Points"]
+        LED["C-404: Life Event Detection"]
+        OIP[(Objective Inflection Points)]
+        LED -->|produces| OIP
+    end
+
+    subgraph C408["C-408: Non-Objective Inflection Points"]
+        NOIPD["Non-Objective Inflection Point Detector"]
+        NOIPART[(Non-Objective Inflection Points)]
+        NOIPD -->|produces| NOIPART
+    end
+
+    IPP[(Inflection Point Properties)]
+    MOIP["C-408: Non-Objective IP\nIncludes LLM-Inferred Signals"]
+end
+
+LIFED  -->|consumes| LED
+SPACE  -->|consumes| LED
+STD    -.->|consumes ?| LED
+STD    -->|consumes| NOIPD
+LLMCE  -.->|consumes ?| NOIPD
+
+OIP     -->|produces| IPP
+NOIPART -->|produces| IPP
+
+%% ─────────────────────────────────────────
+%%  C-406 · RESILIENCE MEASUREMENT
+%% ─────────────────────────────────────────
+C406["C-406: Resilience Measurement"]
+RM[(Resilience Measurement)]
+OIP   -->|consumes| C406
+LLMCE -.->|consumes ?| C406
+C406  -->|produces| RM
+
+%% ─────────────────────────────────────────
+%%  DRIFT & SHADOW DETECTION
+%% ─────────────────────────────────────────
+DRIFTD["Drift Detection\nin Subject Trace & CE Features"]
+DRIFTA[(Drift Detection Output)]
+
+LLMCE  -.->|consumes ?| DRIFTD
+SPACE  -->|consumes| DRIFTD
+RM     -->|consumes| DRIFTD
+DRIFTD -->|produces| DRIFTA
+DRIFTA -->|consumes| SHADOW
+DRIFTA -->|consumes| CCFD
+
+%% ─────────────────────────────────────────
+%%  C-500 · INFLECTION POINT INTERACTION
+%% ─────────────────────────────────────────
+subgraph C500["C-500: Inflection Point Interaction"]
+    direction TB
+    IGB["Interaction Graph Builder"]
+    INTACTS[(Interactions\nCompounding · Cancellation · Sequence)]
+    IG[(Interaction Graph\nNodes: Inflection Points\nEdges: Interaction Weights)]
+    IGB -->|produces| IG
+end
+
+OIP     -->|consumes| IGB
+NOIPART -->|consumes| IGB
+IPP     -->|consumes| IGB
+
+%% ─────────────────────────────────────────
+%%  C-600 · DYNAMIC TEMPORAL DECAY MODEL
+%% ─────────────────────────────────────────
+subgraph C600["C-600: Dynamic Temporal Decay Model"]
+    direction TB
+
+    STA["Salience Tier Assigner"]
+    SDDC[(Salience-Dependent Decay Curves)]
+    STA -->|produces| SDDC
+
+    IPR["Inflection Point Reclassification"]
+    IPP2[(Reclassified Inflection Point Properties)]
+    IPR -->|produces| IPP2
+
+    IADA["Interaction-Adjusted Decay Assignment"]
+    IAD[(Interaction-Adjusted Decay)]
+    IADA -->|produces| IAD
+end
+
+OIP     -->|consumes| STA
+NOIPART -->|consumes| STA
+RM      -->|consumes| IPR
+DRIFTA  -->|consumes| IPR
+OIP     -->|consumes| IPR
+NOIPART -->|consumes| IPR
+IG      -->|consumes| IADA
+
+%% ─────────────────────────────────────────
+%%  C-700 · INFERENTIAL OUTCOME ENGINE
+%% ─────────────────────────────────────────
+subgraph C700["C-700: Inferential Outcome Engine"]
+    direction TB
+
+    subgraph HRG["Horizon Risk"]
+        HRP["Horizon Risk\nComponent"]
+        HRI[(Horizon Risk Inference)]
+        SACD_H[(Salience-Adjusted Confidence Decay – Horizon)]
+        HRP -->|produces| HRI
+        HRP -->|produces| SACD_H
+    end
+
+    subgraph RLG["Response Likelihood"]
+        RLP["Response Likelihood\nComponent"]
+        RI[(Response Inference)]
+        SACD_R[(Salience-Adjusted Confidence Decay – Response)]
+        RLP -->|produces| RI
+        RLP -->|produces| SACD_R
+    end
+
+    subgraph CSMG["Counterfactual Scenario Modeling"]
+        CSMP["Counterfactual Scenario\nModeling Component"]
+        CS[(Counterfactual Scenarios)]
+        SACD_C[(Salience-Adjusted Confidence Decay – Counterfactual)]
+        CSMP -->|produces| CS
+        CSMP -->|produces| SACD_C
+    end
+end
+
+IAD  -->|consumes| HRP
+IAD  -->|consumes| RLP
+IAD  -->|consumes| CSMP
+SDDC -->|consumes| HRP
+SDDC -->|consumes| RLP
+SDDC -->|consumes| CSMP
+
+%% ─────────────────────────────────────────
+%%  C-800 · CONTEXTUALIZATION OUTPUT
+%% ─────────────────────────────────────────
+subgraph C800["C-800: Contextualization Output"]
+    CO["Final Output Assembly\n(Aggregates all prior artifacts)"]
+end
+
+HRI    -->|feeds| CO
+RI     -->|feeds| CO
+CS     -->|feeds| CO
+SACD_H -->|feeds| CO
+SACD_R -->|feeds| CO
+SACD_C -->|feeds| CO
+SSRO_R -->|feeds| CO
+SSRO_S -->|feeds| CO
+RMEAN  -->|feeds| CO
+SMEAN  -->|feeds| CO
+CCE    -->|feeds| CO
+IPP2   -->|feeds| CO
+IAD    -->|feeds| CO
+
+%% ─────────────────────────────────────────
+%%  C-900 · SYSTEM FEEDBACK LOOP
+%% ─────────────────────────────────────────
+subgraph C900["C-900: System Feedback Loop"]
+    direction LR
+    EO["Evaluation of Output"]
+    ORWO["Obtain Real-World Outcomes"]
+    RMR["Regular Model Retraining"]
+    EO --> ORWO
+    EO --> RMR
+end
+
+CO  -->|feeds| EO
+RMR -.->|retrain| CELLM
+RMR -.->|retrain| RLLM
+
+%% ─────────────────────────────────────────
+%%  CROSS-CUTTING SUPPORT (C-300 area)
+%% ─────────────────────────────────────────
+SELF_REP[(Self-Reported User Input)]
+SELF_REP -.->|consumes ?| SPACE
+SELF_REP -.->|consumes ?| SHADOW
+
+%% ─────────────────────────────────────────
+%%  STYLING
+%% ─────────────────────────────────────────
+classDef actor        fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+classDef dataBlue     fill:#0050ef,stroke:#001dbc,color:#fff
+classDef dataBlack    fill:#fff,stroke:#333,color:#333
+classDef dataRed      fill:#a20025,stroke:#6f0000,color:#fff
+classDef process      fill:#f5f5f5,stroke:#616161,color:#212121
+classDef uncertain    stroke-dasharray:5 5
+
+class PR,SS actor
+class CFD,RTax,STaxon,IFD,LIFED,SIGW,VALSPEC,STD,SVIP,SPACE dataBlack
+class PSCE,PSR,PSSTR,PSIP,PSCS,PSAR,PSDEMOG dataBlack
+class LLMCE,CELORA,RLORA,NORMCONF,LLMRISKS,MLRISKS dataBlue
+class SCRPO,WGTS,DT,RSS,RLR,CRAT,SSRO_S,SSRO_R dataBlue
+class SMEAN,RMEAN,LIFED,OIP,IPP,NOIPART,RM dataBlue
+class MCR,SRR,PDR,CCE,COML,CED,OMLD,IPP2,IAD dataBlue
+class INTACTS,DRIFTA dataBlack
+class IG dataRed
+class POLO,ER,SDDC,HRI,RI,CS,SACD_H,SACD_R,SACD_C dataBlack
