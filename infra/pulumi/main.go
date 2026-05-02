@@ -8,6 +8,7 @@
 package main
 
 import (
+	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
@@ -17,9 +18,17 @@ func main() {
 		cfg := config.New(ctx, "")
 		appEnv := cfg.Require("appEnv")
 		vpcCidr := cfg.Require("vpcCidr")
+		ingestWriterAccountID := cfg.Require("ingestWriterAccountID")
 
 		var callerAccounts map[string]string
 		cfg.RequireObject("callerAccounts", &callerAccounts)
+
+		// Bucket owner is the current account (where this stack is deployed)
+		currentIdentity, err := aws.GetCallerIdentity(ctx, &aws.GetCallerIdentityArgs{})
+		if err != nil {
+			return err
+		}
+		bucketOwnerAccountID := currentIdentity.AccountId
 
 		net, err := createNetworking(ctx, appEnv, vpcCidr)
 		if err != nil {
@@ -33,7 +42,7 @@ func main() {
 		}
 
 		// 3. IAM role for cross-account S3 access (Data Ingest pipeline)
-		s3Iam, err := createS3Iam(ctx, appEnv, s3Bucket.Bucket.Bucket)
+		s3Iam, err := createS3Iam(ctx, appEnv, s3Bucket.Bucket.Bucket, bucketOwnerAccountID, ingestWriterAccountID)
 		if err != nil {
 			return err
 		}

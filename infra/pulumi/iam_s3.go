@@ -14,34 +14,31 @@ type S3IamResources struct {
 
 // createS3Iam creates a cross-account IAM role for the Data Ingest pipeline.
 //
-// Roman's pipeline runs from the org root account (770826159442) where he has
-// an Identity Center user with PowerUser access. He assumes this role to get
-// scoped S3 write permissions in the SDS account (174581551884).
+// - bucketOwnerAccountID: the AWS account that owns the S3 bucket (current account).
+// - ingestWriterAccountID: the external AWS account whose users assume this role to write data.
 //
 // Flow:
 //
-//	Roman's Identity Center session (770826159442)
+//	Pipeline operator's Identity Center session (ingestWriterAccountID)
 //	  → aws sts assume-role --role-arn <this role>
 //	  → scoped temporary creds for S3 published/* writes
 //	  → uploads parquet + manifest.json
 //	  → calls POST /v1/ingest-jobs
-func createS3Iam(ctx *pulumi.Context, appEnv string, bucketName pulumi.StringOutput) (*S3IamResources, error) {
-	// Trust policy: allow both the SDS account and the org root account to assume this role.
-	// - Org root (770826159442): Roman's Identity Center session for pipeline uploads.
-	// - SDS account (174581551884): ECS tasks or other SDS-internal callers if needed.
-	trustPolicy := pulumi.String(`{
+func createS3Iam(ctx *pulumi.Context, appEnv string, bucketName pulumi.StringOutput, bucketOwnerAccountID, ingestWriterAccountID string) (*S3IamResources, error) {
+	// Trust policy: allow both the bucket owner and the ingest writer to assume this role.
+	trustPolicy := pulumi.Sprintf(`{
 		"Version": "2012-10-17",
 		"Statement": [{
 			"Effect": "Allow",
 			"Principal": {
 				"AWS": [
-					"arn:aws:iam::174581551884:root",
-					"arn:aws:iam::770826159442:root"
+					"arn:aws:iam::%s:root",
+					"arn:aws:iam::%s:root"
 				]
 			},
 			"Action": "sts:AssumeRole"
 		}]
-	}`)
+	}`, bucketOwnerAccountID, ingestWriterAccountID)
 
 	role, err := iam.NewRole(ctx, fmt.Sprintf("subject-data-ingestion-role-%s", appEnv), &iam.RoleArgs{
 		Name:             pulumi.Sprintf("subject-data-ingestion-role-%s", appEnv),
