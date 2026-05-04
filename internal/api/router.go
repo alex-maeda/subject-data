@@ -115,6 +115,46 @@ func subjectDataModels() []schemabrowser.ModelEntry {
 		// Joined Data
 		{"JoinedSubjectData", "Joined Data", datamodel.JoinedSubjectData{}},
 		{"JoinedDatasetEnriched", "Joined Data", datamodel.JoinedDatasetEnriched{}},
+
+		// Attributes — envelope
+		{"Attribute", "Attributes", datamodel.Attribute{}},
+		{"AttributeEvidenceRef", "Attributes", datamodel.AttributeEvidenceRef{}},
+
+		// Attributes — header payloads (Tier 1)
+		{"AttributeNamePayloadV1", "Attribute Payloads", datamodel.AttributeNamePayloadV1{}},
+		{"AttributeAgePayloadV1", "Attribute Payloads", datamodel.AttributeAgePayloadV1{}},
+		{"AttributeGenderPayloadV1", "Attribute Payloads", datamodel.AttributeGenderPayloadV1{}},
+		{"AttributePhonePayloadV1", "Attribute Payloads", datamodel.AttributePhonePayloadV1{}},
+		{"AttributeEmailPayloadV1", "Attribute Payloads", datamodel.AttributeEmailPayloadV1{}},
+		{"AttributeAvatarPayloadV1", "Attribute Payloads", datamodel.AttributeAvatarPayloadV1{}},
+
+		// Attributes — SO-written card payloads (Tier 2)
+		{"AttributeRelationshipPayloadV1", "Attribute Payloads", datamodel.AttributeRelationshipPayloadV1{}},
+		{"AttributeSocialMediaFootprintPayloadV1", "Attribute Payloads", datamodel.AttributeSocialMediaFootprintPayloadV1{}},
+		{"SocialAccount", "Attribute Payloads", datamodel.SocialAccount{}},
+		{"AttributeGeographicFootprintPayloadV1", "Attribute Payloads", datamodel.AttributeGeographicFootprintPayloadV1{}},
+		{"GeoCoordinates", "Attribute Payloads", datamodel.GeoCoordinates{}},
+		{"CityLocation", "Attribute Payloads", datamodel.CityLocation{}},
+		{"LocationFrequency", "Attribute Payloads", datamodel.LocationFrequency{}},
+		{"GeographicLocation", "Attribute Payloads", datamodel.GeographicLocation{}},
+		{"GeographicDataPoint", "Attribute Payloads", datamodel.GeographicDataPoint{}},
+
+		// Attributes — DE-written card payloads (Tier 2)
+		{"AttributePublicRecordsPayloadV1", "Attribute Payloads", datamodel.AttributePublicRecordsPayloadV1{}},
+		{"PublicRecordGroup", "Attribute Payloads", datamodel.PublicRecordGroup{}},
+		{"PublicRecord", "Attribute Payloads", datamodel.PublicRecord{}},
+		{"PublicRecordParty", "Attribute Payloads", datamodel.PublicRecordParty{}},
+		{"AttributeTimelinesPayloadV1", "Attribute Payloads", datamodel.AttributeTimelinesPayloadV1{}},
+		{"TimelineEvent", "Attribute Payloads", datamodel.TimelineEvent{}},
+
+		// Attributes — stubs (Tier 3 — post-beta / post-GA)
+		{"AttributeInTheNewsPayloadV1", "Attribute Payloads", datamodel.AttributeInTheNewsPayloadV1{}},
+		{"NewsArticle", "Attribute Payloads", datamodel.NewsArticle{}},
+		{"AttributeDataLeaksPayloadV1", "Attribute Payloads", datamodel.AttributeDataLeaksPayloadV1{}},
+		{"DataLeak", "Attribute Payloads", datamodel.DataLeak{}},
+		{"DataLeakSource", "Attribute Payloads", datamodel.DataLeakSource{}},
+		{"AttributeBehavioralAnalysisPayloadV1", "Attribute Payloads", datamodel.AttributeBehavioralAnalysisPayloadV1{}},
+		{"AttributeSummaryPayloadV1", "Attribute Payloads", datamodel.AttributeSummaryPayloadV1{}},
 	}
 
 	entries := make([]schemabrowser.ModelEntry, len(models))

@@ -55,13 +55,13 @@ func (s *SubjectService) GetSubject(id string) (*datamodel.JoinedSubjectData, er
 	if err != nil {
 		return nil, fmt.Errorf("getting records: %w", err)
 	}
-	subject.TraceData = make([]datamodel.Record, 0, len(recordRows))
+	subject.Records = make([]datamodel.Record, 0, len(recordRows))
 	for _, row := range recordRows {
 		var td datamodel.Record
 		if err := json.Unmarshal([]byte(row), &td); err != nil {
 			return nil, fmt.Errorf("unmarshaling record: %w", err)
 		}
-		subject.TraceData = append(subject.TraceData, td)
+		subject.Records = append(subject.Records, td)
 	}
 
 	// Load ratings with nested feature_ratings
@@ -97,7 +97,7 @@ func (s *SubjectService) CreateSubject(subjectName string) (string, error) {
 	id := uuid.New().String()
 	subject := &datamodel.JoinedSubjectData{
 		SubjectName: &subjectName,
-		TraceData:   []datamodel.Record{},
+		Records:     []datamodel.Record{},
 		Ratings:     []datamodel.SubjectRatings{},
 	}
 	subject.ID = &id
@@ -134,7 +134,7 @@ func (s *SubjectService) SaveSubject(subject *datamodel.JoinedSubjectData) error
 		ID:          subject.ID,
 		SubjectID:   subject.SubjectID,
 		SubjectName: subject.SubjectName,
-		TraceData:   []datamodel.Record{},
+		Records:     []datamodel.Record{},
 		Ratings:     []datamodel.SubjectRatings{},
 	}
 	subjectName := ""
@@ -146,7 +146,7 @@ func (s *SubjectService) SaveSubject(subject *datamodel.JoinedSubjectData) error
 	}
 
 	// Save records
-	for _, td := range subject.TraceData {
+	for _, td := range subject.Records {
 		if td.ID == nil {
 			continue
 		}

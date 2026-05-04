@@ -18,7 +18,7 @@ type Evidence struct {
 // EvidenceEnriched extends Evidence with dereferenced trace data.
 type EvidenceEnriched struct {
 	Evidence
-	TraceData *Record `json:"trace_data,omitempty" jsonschema_description:"Dereferenced record data for this evidence"`
+	Record *Record `json:"record,omitempty" jsonschema_description:"Dereferenced record data for this evidence"`
 }
 
 // CEFeatureDefinition defines a CE feature with benchmarks.

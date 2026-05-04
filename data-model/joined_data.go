@@ -5,15 +5,15 @@ type JoinedSubjectData struct {
 	ID          *string          `json:"id,omitempty" jsonschema_description:"Opaque subject identifier"`
 	SubjectID   *string          `json:"subject_id,omitempty" jsonschema_description:"Subject identifier"`
 	SubjectName *string          `json:"subject_name,omitempty" jsonschema_description:"Subject's name"`
-	TraceData   []Record         `json:"trace_data" jsonschema_description:"Data from processed reports and scraped data"`
+	Records     []Record         `json:"records" jsonschema_description:"Data from processed reports and scraped data"`
 	Ratings     []SubjectRatings `json:"ratings" jsonschema_description:"List of assessment ratings, one per rater"`
 }
 
 // NewJoinedSubjectData creates a JoinedSubjectData with initialized slices.
 func NewJoinedSubjectData() JoinedSubjectData {
 	return JoinedSubjectData{
-		TraceData: []Record{},
-		Ratings:   []SubjectRatings{},
+		Records: []Record{},
+		Ratings: []SubjectRatings{},
 	}
 }
 

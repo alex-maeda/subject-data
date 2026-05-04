@@ -13,7 +13,7 @@ import (
 	"github.com/sovraai/subject-data/internal/persistence"
 )
 
-// RecordService provides CRUD operations for records (formerly TraceData).
+// RecordService provides CRUD operations for Records (formerly TraceData).
 type RecordService struct {
 	logger *slog.Logger
 	repo   *persistence.SubjectIndexedRepository
