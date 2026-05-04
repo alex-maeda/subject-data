@@ -201,5 +201,190 @@ func Examples() map[string]any {
 			Subjects: []string{"subj_123456"},
 			Raters:   []string{"llm_rater"},
 		},
+
+		// ----- Attribute envelope & provenance -----
+
+		"Attribute": Attribute{
+			Identifiable:    Identifiable{ID: ptr("attr_001")},
+			SubjectID:       "subj_123456",
+			Type:            AttributeTypeName,
+			SchemaVersion:   "v1",
+			Payload:         []byte(`{"first":"John","last":"Smith"}`),
+			Confidence:      0.92,
+			EvidenceSummary: "Derived from PDL record and voter-registration match.",
+			EvidenceRefs: []AttributeEvidenceRef{
+				{RecordID: "rec_abc", SourceField: "full_name", NormalizedAttribute: "first_name"},
+			},
+		},
+
+		"AttributeEvidenceRef": AttributeEvidenceRef{
+			RecordID:            "rec_abc",
+			SourceField:         "full_name",
+			NormalizedAttribute: "first_name",
+		},
+
+		// ----- Tier 1 — Header payloads -----
+
+		"AttributeNamePayloadV1": AttributeNamePayloadV1{
+			First:       "John",
+			Last:        "Smith",
+			DisplayName: "John Smith",
+		},
+
+		"AttributeAgePayloadV1": AttributeAgePayloadV1{
+			YearOfBirth: 1990,
+			BirthDate:   "1990-06-15",
+		},
+
+		"AttributeGenderPayloadV1": AttributeGenderPayloadV1{
+			Value: GenderMale,
+		},
+
+		"AttributePhonePayloadV1": AttributePhonePayloadV1{
+			Obfuscated: "+1 713 ***-**89",
+			Country:    "US",
+		},
+
+		"AttributeEmailPayloadV1": AttributeEmailPayloadV1{
+			Obfuscated: "jo********@gmail.com",
+		},
+
+		"AttributeAvatarPayloadV1": AttributeAvatarPayloadV1{
+			URL: "https://hosted-copy-of-data/avatar_abc123.jpg",
+		},
+
+		// ----- Tier 2 — SO-written card payloads -----
+
+		"AttributeRelationshipPayloadV1": AttributeRelationshipPayloadV1{
+			Status: RelationshipStatusMarried,
+		},
+
+		"SocialAccount": SocialAccount{
+			Platform:        SocialPlatformLinkedIn,
+			Handle:          "johnsmith",
+			ProfileURL:      "https://linkedin.com/in/johnsmith",
+			MatchConfidence: SocialMatchVerified,
+		},
+
+		"AttributeSocialMediaFootprintPayloadV1": AttributeSocialMediaFootprintPayloadV1{
+			Accounts: []SocialAccount{
+				{Platform: SocialPlatformLinkedIn, Handle: "johnsmith", ProfileURL: "https://linkedin.com/in/johnsmith", MatchConfidence: SocialMatchVerified},
+				{Platform: SocialPlatformTwitter, Handle: "jsmith42", ProfileURL: "https://twitter.com/jsmith42", MatchConfidence: SocialMatchInferred},
+			},
+		},
+
+		"GeoCoordinates": GeoCoordinates{Lat: 29.7604, Lng: -95.3698},
+
+		"CityLocation": CityLocation{
+			City:        "Houston",
+			State:       "TX",
+			Coordinates: &GeoCoordinates{Lat: 29.7604, Lng: -95.3698},
+		},
+
+		"LocationFrequency": LocationFrequency{
+			City: "Houston", State: "TX", Count: 12,
+			Coordinates: &GeoCoordinates{Lat: 29.7604, Lng: -95.3698},
+		},
+
+		"GeographicDataPoint": GeographicDataPoint{
+			Location:   GeographicLocation{City: "Houston", State: "TX"},
+			Date:       "2025-03-15",
+			SourceType: "voter_registration",
+		},
+
+		"AttributeGeographicFootprintPayloadV1": AttributeGeographicFootprintPayloadV1{
+			LatestLocation: &CityLocation{City: "Houston", State: "TX"},
+			LocationFrequency: []LocationFrequency{
+				{City: "Houston", State: "TX", Count: 12},
+				{City: "Austin", State: "TX", Count: 3},
+			},
+			DataPoints: []GeographicDataPoint{
+				{Location: GeographicLocation{City: "Houston", State: "TX"}, Date: "2025-03-15", SourceType: "voter_registration"},
+			},
+		},
+
+		// ----- Tier 2 — DE-written card payloads -----
+
+		"PublicRecordParty": PublicRecordParty{Role: "defendant"},
+
+		"PublicRecord": PublicRecord{
+			Title:          "Smith v. State of Texas",
+			Date:           "2024-08-12",
+			Location:       "Harris County, TX",
+			Description:    "Traffic violation",
+			Role:           "defendant",
+			Classification: "dismissed",
+			CaseType:       "traffic",
+			Disposition:    "case dismissed",
+		},
+
+		"PublicRecordGroup": PublicRecordGroup{
+			Type: PublicRecordTypeCivil,
+			Records: []PublicRecord{
+				{Title: "Smith v. State of Texas", Date: "2024-08-12", Location: "Harris County, TX", CaseType: "traffic", Disposition: "case dismissed"},
+			},
+		},
+
+		"AttributePublicRecordsPayloadV1": AttributePublicRecordsPayloadV1{
+			Groups: []PublicRecordGroup{
+				{Type: PublicRecordTypeCivil, Records: []PublicRecord{
+					{Title: "Smith v. State of Texas", Date: "2024-08-12", Location: "Harris County, TX"},
+				}},
+			},
+		},
+
+		"TimelineEvent": TimelineEvent{
+			Category:  TimelineCategoryLocation,
+			Title:     "Moved to Houston, TX",
+			StartDate: "2022-06-01",
+		},
+
+		"AttributeTimelinesPayloadV1": AttributeTimelinesPayloadV1{
+			Events: []TimelineEvent{
+				{Category: TimelineCategoryLocation, Title: "Moved to Houston, TX", StartDate: "2022-06-01"},
+				{Category: TimelineCategoryProfessional, Title: "Started at Acme Corp", StartDate: "2023-01-15"},
+			},
+		},
+
+		// ----- Tier 3 — Stub card payloads -----
+
+		"NewsArticle": NewsArticle{
+			Title:           "Local engineer wins innovation award",
+			Source:          "Houston Chronicle",
+			PublishedAt:     "2025-11-20",
+			URL:             "https://example.com/article/123",
+			MatchConfidence: NewsMatchVerified,
+			ContentType:     NewsContentTypeArticle,
+		},
+
+		"AttributeInTheNewsPayloadV1": AttributeInTheNewsPayloadV1{
+			Articles: []NewsArticle{
+				{Title: "Local engineer wins innovation award", Source: "Houston Chronicle", PublishedAt: "2025-11-20", URL: "https://example.com/article/123", MatchConfidence: NewsMatchVerified, ContentType: NewsContentTypeArticle},
+			},
+		},
+
+		"DataLeakSource": DataLeakSource{Name: "ExampleBreach2024", Domain: "example.com"},
+
+		"DataLeak": DataLeak{
+			Source:            DataLeakSource{Name: "ExampleBreach2024", Domain: "example.com"},
+			LeakDate:          "2024-02-14",
+			ExposedCategories: []string{"email", "password-hash"},
+			Severity:          DataLeakSeverityMedium,
+		},
+
+		"AttributeDataLeaksPayloadV1": AttributeDataLeaksPayloadV1{
+			Leaks: []DataLeak{
+				{Source: DataLeakSource{Name: "ExampleBreach2024", Domain: "example.com"}, LeakDate: "2024-02-14", ExposedCategories: []string{"email", "password-hash"}, Severity: DataLeakSeverityMedium},
+			},
+		},
+
+		"AttributeBehavioralAnalysisPayloadV1": AttributeBehavioralAnalysisPayloadV1{
+			Traits:  []string{"Achievement-oriented", "Detail-conscious", "Resilient under pressure"},
+			Summary: "Subject demonstrates strong goal-directed behavior with high persistence.",
+		},
+
+		"AttributeSummaryPayloadV1": AttributeSummaryPayloadV1{
+			Summary: "John Smith is a Houston-based professional with a clean public record and active social media presence.",
+		},
 	}
 }

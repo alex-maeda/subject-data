@@ -11,7 +11,7 @@ import (
 
 // NewSQLiteDB opens a SQLite database at the given path and returns a sqlx.DB.
 func NewSQLiteDB(path string) (*sqlx.DB, error) {
-	db, err := sqlx.Open("sqlite", path+"?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)")
+	db, err := sqlx.Open("sqlite", path+"?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)")
 	if err != nil {
 		return nil, fmt.Errorf("opening sqlite db: %w", err)
 	}

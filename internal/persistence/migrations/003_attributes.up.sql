@@ -8,12 +8,13 @@
 --
 -- Constraints:
 --   - UNIQUE (subject_id, type) enforces "one Attribute per (subject, type) pair".
---     Multi-writer reconciliation is implicit via UPSERT (latest write wins).
+--     Callers must look up existing rows by (subject_id, type) before writing;
+--     the existing Upsert helpers use ON CONFLICT(id), not this tuple.
 --   - ON DELETE CASCADE on subject_id: Attributes are derived state, not durable
 --     observations like Records — they don't survive deletion of their Subject.
 --
 -- Indexes:
---   - subject_id: primary access pattern (BFF reads all attributes for a subject).
+--   - UNIQUE (subject_id, type) implicitly covers subject_id lookups (left-prefix).
 --   - type: secondary access pattern (ops queries / cross-subject filtering).
 
 CREATE TABLE attributes (
@@ -26,5 +27,4 @@ CREATE TABLE attributes (
     UNIQUE (subject_id, type)
 );
 
-CREATE INDEX ix_attributes_subject_id ON attributes (subject_id);
-CREATE INDEX ix_attributes_type       ON attributes (type);
+CREATE INDEX ix_attributes_type ON attributes (type);

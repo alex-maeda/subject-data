@@ -398,3 +398,73 @@ type AttributeBehavioralAnalysisPayloadV1 struct {
 type AttributeSummaryPayloadV1 struct {
 	Summary string `json:"summary"`
 }
+
+// -----------------------------------------------------------------------------
+// Constructors — initialize slice fields to empty slices so JSON marshaling
+// produces [] instead of null. Follows the same convention as NewRecord,
+// NewAttribute, NewJoinedSubjectData, etc.
+// -----------------------------------------------------------------------------
+
+// NewAttributeSocialMediaFootprintPayloadV1 returns a zero-value payload with Accounts initialized.
+func NewAttributeSocialMediaFootprintPayloadV1() AttributeSocialMediaFootprintPayloadV1 {
+	return AttributeSocialMediaFootprintPayloadV1{
+		Accounts: []SocialAccount{},
+	}
+}
+
+// NewAttributeGeographicFootprintPayloadV1 returns a zero-value payload with slices initialized.
+func NewAttributeGeographicFootprintPayloadV1() AttributeGeographicFootprintPayloadV1 {
+	return AttributeGeographicFootprintPayloadV1{
+		LocationFrequency: []LocationFrequency{},
+		DataPoints:        []GeographicDataPoint{},
+	}
+}
+
+// NewPublicRecordGroup returns a zero-value group with Records initialized.
+func NewPublicRecordGroup() PublicRecordGroup {
+	return PublicRecordGroup{
+		Records: []PublicRecord{},
+	}
+}
+
+// NewAttributePublicRecordsPayloadV1 returns a zero-value payload with Groups initialized.
+func NewAttributePublicRecordsPayloadV1() AttributePublicRecordsPayloadV1 {
+	return AttributePublicRecordsPayloadV1{
+		Groups: []PublicRecordGroup{},
+	}
+}
+
+// NewAttributeTimelinesPayloadV1 returns a zero-value payload with Events initialized.
+func NewAttributeTimelinesPayloadV1() AttributeTimelinesPayloadV1 {
+	return AttributeTimelinesPayloadV1{
+		Events: []TimelineEvent{},
+	}
+}
+
+// NewAttributeInTheNewsPayloadV1 returns a zero-value payload with Articles initialized.
+func NewAttributeInTheNewsPayloadV1() AttributeInTheNewsPayloadV1 {
+	return AttributeInTheNewsPayloadV1{
+		Articles: []NewsArticle{},
+	}
+}
+
+// NewDataLeak returns a zero-value leak with ExposedCategories initialized.
+func NewDataLeak() DataLeak {
+	return DataLeak{
+		ExposedCategories: []string{},
+	}
+}
+
+// NewAttributeDataLeaksPayloadV1 returns a zero-value payload with Leaks initialized.
+func NewAttributeDataLeaksPayloadV1() AttributeDataLeaksPayloadV1 {
+	return AttributeDataLeaksPayloadV1{
+		Leaks: []DataLeak{},
+	}
+}
+
+// NewAttributeBehavioralAnalysisPayloadV1 returns a zero-value payload with Traits initialized.
+func NewAttributeBehavioralAnalysisPayloadV1() AttributeBehavioralAnalysisPayloadV1 {
+	return AttributeBehavioralAnalysisPayloadV1{
+		Traits: []string{},
+	}
+}
