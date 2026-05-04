@@ -32,3 +32,5 @@ infra/pulumi/.envrc
 *.zip
 *.log
 *.exe
+
+result/

@@ -3,4 +3,6 @@ config:
   aws:region: us-east-2
   subject-data:appEnv: beta
   subject-data:vpcCidr: 10.2.0.0/24
-  subject-data:callerAccounts: '{"frontend-server":"835107812595"}'
+  subject-data:ingestWriterAccountID: "770826159442"
+  subject-data:callerAccounts:
+    frontend-server: "835107812595"

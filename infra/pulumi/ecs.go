@@ -153,34 +153,25 @@ func createECS(ctx *pulumi.Context, appEnv string, net *NetworkResources, repoUR
 	_, err = iam.NewRolePolicy(ctx, "task-s3-access", &iam.RolePolicyArgs{
 		Role: taskRole.Name,
 		Policy: s3Res.Bucket.Bucket.ApplyT(
-			func(bucket string) string {
-				bucketArn := fmt.Sprintf("arn:aws:s3:::%s", bucket)
-				policy, _ := json.Marshal(map[string]any{
+			func(bucket string) (string, error) {
+				arn := fmt.Sprintf("arn:aws:s3:::%s", bucket)
+				return fmt.Sprintf(`{
 					"Version": "2012-10-17",
-					"Statement": []map[string]any{
+					"Statement": [
 						{
-							"Sid":    "S3ReadIngestionBucket",
+							"Sid": "S3ReadIngestionBucket",
 							"Effect": "Allow",
-							"Action": []string{
-								"s3:GetObject",
-								"s3:ListBucket",
-							},
-							"Resource": []string{
-								bucketArn,
-								bucketArn + "/*",
-							},
+							"Action": ["s3:GetObject", "s3:ListBucket"],
+							"Resource": ["%s", "%s/*"]
 						},
 						{
-							"Sid":    "S3WriteIngestionJson",
+							"Sid": "S3WriteIngestionJson",
 							"Effect": "Allow",
-							"Action": []string{
-								"s3:PutObject",
-							},
-							"Resource": bucketArn + "/published/*/ingestion.json",
-						},
-					},
-				})
-				return string(policy)
+							"Action": "s3:PutObject",
+							"Resource": "%s/published/*/ingestion.json"
+						}
+					]
+				}`, arn, arn, arn), nil
 			},
 		).(pulumi.StringOutput),
 	})
