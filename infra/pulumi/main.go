@@ -18,7 +18,6 @@ func main() {
 		cfg := config.New(ctx, "")
 		appEnv := cfg.Require("appEnv")
 		vpcCidr := cfg.Require("vpcCidr")
-		ingestWriterAccountID := cfg.Require("ingestWriterAccountID")
 
 		var callerAccounts map[string]string
 		cfg.RequireObject("callerAccounts", &callerAccounts)
@@ -29,6 +28,9 @@ func main() {
 			return err
 		}
 		bucketOwnerAccountID := currentIdentity.AccountId
+
+		// Data ingest account from callerAccounts (also gets an APIGW invoke role)
+		ingestWriterAccountID := callerAccounts["data-ingest"]
 
 		net, err := createNetworking(ctx, appEnv, vpcCidr)
 		if err != nil {
