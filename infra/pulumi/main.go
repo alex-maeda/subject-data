@@ -22,6 +22,11 @@ func main() {
 		var callerAccounts map[string]string
 		cfg.RequireObject("callerAccounts", &callerAccounts)
 
+		// Accounts allowed to assume the S3 ingestion bucket writer role.
+		// Distinct from callerAccounts (those are API Gateway invokers).
+		var ingestWriterAccountIDs []string
+		cfg.RequireObject("ingestWriterAccounts", &ingestWriterAccountIDs)
+
 		// Bucket owner is the current account (where this stack is deployed)
 		currentIdentity, err := aws.GetCallerIdentity(ctx, &aws.GetCallerIdentityArgs{})
 		if err != nil {
@@ -29,22 +34,19 @@ func main() {
 		}
 		bucketOwnerAccountID := currentIdentity.AccountId
 
-		// Data ingest account from callerAccounts (also gets an APIGW invoke role)
-		ingestWriterAccountID := callerAccounts["data-ingest"]
-
 		net, err := createNetworking(ctx, appEnv, vpcCidr)
 		if err != nil {
 			return err
 		}
 
 		// 2. S3 bucket for ingestion
-		s3Bucket, err := createS3Bucket(ctx, appEnv)
+		s3Bucket, err := createIngestionS3Bucket(ctx, appEnv)
 		if err != nil {
 			return err
 		}
 
 		// 3. IAM role for cross-account S3 access (Data Ingest pipeline)
-		s3Iam, err := createS3Iam(ctx, appEnv, s3Bucket.Bucket.Bucket, bucketOwnerAccountID, ingestWriterAccountID)
+		s3Iam, err := createS3Iam(ctx, appEnv, s3Bucket.Bucket.Bucket, bucketOwnerAccountID, ingestWriterAccountIDs)
 		if err != nil {
 			return err
 		}

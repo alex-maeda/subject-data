@@ -38,16 +38,6 @@ Go API server for Sovra's subject data service. Manages Subjects, Properties, an
 - **Server-to-server auth only** — the web app never calls this service directly
 - Bearer token auth via `AUTH_TOKENS` env var
 
-## Pulumi / Infrastructure
-
-- **ALWAYS run Pulumi in Docker** — never run `pulumi` commands directly on host
-- **Inside Docker, ALWAYS check IP first** before running any other commands (e.g., `curl -s https://checkip.amazonaws.com` inside the container). Only proceed with Pulumi/AWS commands after confirming the IP is correct.
-- After IP check, run `aws sts get-caller-identity` to verify the correct IAM identity
-- Use `./scripts/pulumi-docker.sh` for all Pulumi operations (preview, up, destroy, etc.)
-- Use `docker-compose.yml` services: `pulumi` (AWS-backed state) or `pulumi-local` (file-backed state)
-- `go build ./...` on host is acceptable for compilation checks only
-- All IP checks, AWS commands, and Pulumi operations must happen inside Docker, never on host
-
 ## Related Repos
 
 - `sovraai/subject-data` — structured subject search API. Project conventions (CI/CD, infra, code style) are mirrored from here.

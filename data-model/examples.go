@@ -132,8 +132,8 @@ func Examples() map[string]any {
 		"Evidence": exampleEvidence,
 
 		"EvidenceEnriched": EvidenceEnriched{
-			Evidence:  exampleEvidence,
-			TraceData: nil,
+			Evidence: exampleEvidence,
+			Record:   nil,
 		},
 
 		"CEFeatureDefinition": exampleCEFeatureDefinition,
@@ -182,7 +182,7 @@ func Examples() map[string]any {
 			ID:          ptr("a1b2c3d4-e5f6-7890-abcd-ef1234567890"),
 			SubjectID:   ptr("subj_123456"),
 			SubjectName: ptr("Doe, John"),
-			TraceData:   []Record{exampleRecord},
+			Records:     []Record{exampleRecord},
 			Ratings:     []SubjectRatings{exampleSubjectRatings},
 		},
 
@@ -193,7 +193,7 @@ func Examples() map[string]any {
 						ID:          ptr("a1b2c3d4-e5f6-7890-abcd-ef1234567890"),
 						SubjectID:   ptr("subj_123456"),
 						SubjectName: ptr("Doe, John"),
-						TraceData:   []Record{exampleRecord},
+						Records:     []Record{exampleRecord},
 						Ratings:     []SubjectRatings{exampleSubjectRatings},
 					},
 				},

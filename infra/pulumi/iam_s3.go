@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -12,33 +13,40 @@ type S3IamResources struct {
 	Role *iam.Role
 }
 
-// createS3Iam creates a cross-account IAM role for the Data Ingest pipeline.
+// createS3Iam creates a cross-account IAM role for writers to the S3 ingestion
+// bucket.
 //
-// - bucketOwnerAccountID: the AWS account that owns the S3 bucket (current account).
-// - ingestWriterAccountID: the external AWS account whose users assume this role to write data.
+//   - bucketOwnerAccountID: the AWS account that owns the bucket (current
+//     account); included in the trust policy so admins in this account can
+//     exercise the role.
+//   - ingestWriterAccountIDs: external AWS accounts whose principals can assume
+//     this role to PutObject under the bucket. Multiple writers are supported;
+//     the trust policy lists each as a Principal.AWS entry.
 //
 // Flow:
 //
-//	Pipeline operator's Identity Center session (ingestWriterAccountID)
+//	Writer's Identity Center session (ingestWriterAccountIDs[i])
 //	  → aws sts assume-role --role-arn <this role>
 //	  → scoped temporary creds for S3 published/* writes
 //	  → uploads parquet + manifest.json
 //	  → calls POST /v1/ingest-jobs
-func createS3Iam(ctx *pulumi.Context, appEnv string, bucketName pulumi.StringOutput, bucketOwnerAccountID, ingestWriterAccountID string) (*S3IamResources, error) {
-	// Trust policy: allow both the bucket owner and the ingest writer to assume this role.
-	trustPolicy := pulumi.Sprintf(`{
+func createS3Iam(ctx *pulumi.Context, appEnv string, bucketName pulumi.StringOutput, bucketOwnerAccountID string, ingestWriterAccountIDs []string) (*S3IamResources, error) {
+	// Build the Principal.AWS array: bucket owner + each writer account root.
+	principalARNs := make([]string, 0, len(ingestWriterAccountIDs)+1)
+	principalARNs = append(principalARNs, fmt.Sprintf(`"arn:aws:iam::%s:root"`, bucketOwnerAccountID))
+	for _, id := range ingestWriterAccountIDs {
+		principalARNs = append(principalARNs, fmt.Sprintf(`"arn:aws:iam::%s:root"`, id))
+	}
+	trustPolicy := pulumi.String(fmt.Sprintf(`{
 		"Version": "2012-10-17",
 		"Statement": [{
 			"Effect": "Allow",
 			"Principal": {
-				"AWS": [
-					"arn:aws:iam::%s:root",
-					"arn:aws:iam::%s:root"
-				]
+				"AWS": [%s]
 			},
 			"Action": "sts:AssumeRole"
 		}]
-	}`, bucketOwnerAccountID, ingestWriterAccountID)
+	}`, strings.Join(principalARNs, ", ")))
 
 	role, err := iam.NewRole(ctx, fmt.Sprintf("subject-data-ingestion-role-%s", appEnv), &iam.RoleArgs{
 		Name:             pulumi.Sprintf("subject-data-ingestion-role-%s", appEnv),
@@ -49,12 +57,13 @@ func createS3Iam(ctx *pulumi.Context, appEnv string, bucketName pulumi.StringOut
 		return nil, err
 	}
 
-	// S3 permissions policy for the Data Ingest pipeline.
+	// S3 permissions policy for ingest writers.
 	// Layout: published/<batch>/<dataset>_<dataset_version>/{parts, manifest.json}
 	// - PutObject with s3:if-none-match to prevent overwrites (create-only)
-	// - GetObject for read-back / verification
 	// - ListBucket scoped to published/ prefix
 	// - Explicit Deny on DeleteObject
+	// Note: writers do not need GetObject — job status is exposed via the SDS
+	// REST API (GET /v1/ingest-jobs/{id}), not via S3 objects.
 	rolePolicyDoc := bucketName.ApplyT(func(bucket string) (string, error) {
 		arn := fmt.Sprintf("arn:aws:s3:::%s", bucket)
 		return fmt.Sprintf(`{
@@ -83,19 +92,13 @@ func createS3Iam(ctx *pulumi.Context, appEnv string, bucketName pulumi.StringOut
 					}
 				},
 				{
-					"Sid": "ReadOwnData",
-					"Effect": "Allow",
-					"Action": "s3:GetObject",
-					"Resource": "%s/published/*"
-				},
-				{
 					"Sid": "DenyDelete",
 					"Effect": "Deny",
 					"Action": "s3:DeleteObject",
 					"Resource": "%s/*"
 				}
 			]
-		}`, arn, arn, arn, arn), nil
+		}`, arn, arn, arn), nil
 	}).(pulumi.StringOutput)
 
 	policy, err := iam.NewPolicy(ctx, fmt.Sprintf("subject-data-ingestion-policy-%s", appEnv), &iam.PolicyArgs{

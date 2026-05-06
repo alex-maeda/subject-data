@@ -1,8 +1,15 @@
-encryptionsalt: v1:eOvaYcSDivU=:v1:gdQ9aVukB0t4pUN/:XMDytJshf5q/WcTfTYwPFB8wOJBReg==
 config:
-  aws:region: us-east-2
   subject-data:appEnv: beta
-  subject-data:vpcCidr: 10.2.0.0/24
+  subject-data:vpcCidr: "10.2.0.0/24"
+  # Map of caller name → AWS account ID. Each caller gets its own
+  # cross-account IAM invoke role for the API Gateway.
   subject-data:callerAccounts:
     frontend-server: "835107812595"
-    data-ingest: "770826159442"
+    data-ingest: "602787431936"
+  # AWS accounts allowed to assume the S3 ingestion bucket writer role.
+  # Distinct from callerAccounts because S3 writers and API callers are
+  # not necessarily the same set.
+  subject-data:ingestWriterAccounts:
+    - "602787431936"
+  aws:region: us-east-2
+encryptionsalt: v1:b+GCZtUB2Yc=:v1:Q7t8HK03obA6cp/p:ZVmIhgJqGPGS98a0GEpHO6pJb+wSdg==

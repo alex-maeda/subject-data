@@ -168,7 +168,7 @@ func createECS(ctx *pulumi.Context, appEnv string, net *NetworkResources, repoUR
 							"Sid": "S3WriteIngestionJson",
 							"Effect": "Allow",
 							"Action": "s3:PutObject",
-							"Resource": "%s/published/*/ingestion.json"
+							"Resource": "%s/*/ingestion.json"
 						}
 					]
 				}`, arn, arn, arn), nil
